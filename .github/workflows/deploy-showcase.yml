@@ -23,9 +23,22 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y pandoc
 
-      - name: Install dependencies
+      - name: Install system dependencies
         run: |
-          R -e "install.packages(c('rmarkdown', 'knitr', 'ggplot2', 'dplyr', 'tidyr', 'wordcloud', 'plotly', 'RColorBrewer'), repos='https://cran.rstudio.com/')"
+          sudo apt-get update
+          sudo apt-get install -y libcurl4-openssl-dev libssl-dev libxml2-dev
+
+      - name: Install R packages
+        run: |
+          R -e "install.packages(c('rmarkdown', 'knitr', 'ggplot2', 'dplyr', 'tidyr', 'wordcloud', 'plotly', 'RColorBrewer', 'tidytext'), repos='https://cran.rstudio.com/')"
+          R -e "if (!require('plotly')) install.packages('plotly', repos='https://cran.rstudio.com/')"
+          R -e "if (!require('wordcloud')) install.packages('wordcloud', repos='https://cran.rstudio.com/')"
+          R -e "if (!require('RColorBrewer')) install.packages('RColorBrewer', repos='https://cran.rstudio.com/')"
+          R -e "if (!require('tidytext')) install.packages('tidytext', repos='https://cran.rstudio.com/')"
+
+      - name: Verify package installation
+        run: |
+          R -e "packages <- c('rmarkdown', 'knitr', 'ggplot2', 'dplyr', 'tidyr', 'wordcloud', 'plotly', 'RColorBrewer', 'tidytext'); sapply(packages, require, character.only = TRUE)"
 
       - name: Build showcase page
         run: |
