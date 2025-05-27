@@ -18,9 +18,14 @@ jobs:
         with:
           r-version: '4.2.0'
 
+      - name: Install pandoc
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y pandoc
+
       - name: Install dependencies
         run: |
-          R -e "install.packages(c('rmarkdown', 'knitr', 'ggplot2', 'dplyr', 'tidyr', 'wordcloud', 'plotly'), repos='https://cran.rstudio.com/')"
+          R -e "install.packages(c('rmarkdown', 'knitr', 'ggplot2', 'dplyr', 'tidyr', 'wordcloud', 'plotly', 'RColorBrewer'), repos='https://cran.rstudio.com/')"
 
       - name: Build showcase page
         run: |
