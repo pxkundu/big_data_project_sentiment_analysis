@@ -1,0 +1,33 @@
+name: Deploy Showcase Page
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+
+      - name: Setup R
+        uses: r-lib/actions/setup-r@v2
+        with:
+          r-version: '4.2.0'
+
+      - name: Install dependencies
+        run: |
+          R -e "install.packages(c('rmarkdown', 'knitr', 'ggplot2', 'dplyr', 'tidyr', 'wordcloud', 'plotly'), repos='https://cran.rstudio.com/')"
+
+      - name: Build showcase page
+        run: |
+          R -e "rmarkdown::render('showcase.Rmd', output_format = 'html_document')"
+
+      - name: Deploy to GitHub Pages
+        uses: JamesIves/github-pages-deploy-action@v4
+        with:
+          folder: ./
+          branch: gh-pages 

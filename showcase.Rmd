@@ -1,0 +1,114 @@
+---
+title: "E-commerce Sentiment Analysis Showcase"
+output: 
+  html_document:
+    theme: cosmo
+    toc: true
+    toc_float: true
+    code_folding: hide
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, warning = FALSE, message = FALSE)
+library(ggplot2)
+library(dplyr)
+library(tidyr)
+library(wordcloud)
+library(plotly)
+```
+
+# Project Overview
+
+This project analyzes sentiment in e-commerce product reviews to understand customer satisfaction and product performance. The analysis provides valuable insights into customer feedback and helps identify areas for improvement.
+
+## Key Features
+
+- Sentiment analysis of product reviews
+- Visualization of sentiment distribution
+- Word cloud analysis of common terms
+- Interactive plots for better data exploration
+
+## Data Analysis
+
+```{r load-data}
+# Load and prepare the data
+data <- read.csv("Dataset.csv")
+```
+
+### Sentiment Distribution
+
+```{r sentiment-distribution}
+# Create a sentiment distribution plot
+sentiment_plot <- ggplot(data, aes(x = sentiment)) +
+  geom_bar(fill = "steelblue") +
+  theme_minimal() +
+  labs(title = "Distribution of Sentiment Scores",
+       x = "Sentiment",
+       y = "Count")
+
+ggplotly(sentiment_plot)
+```
+
+### Word Cloud Analysis
+
+```{r wordcloud}
+# Generate word cloud from review text
+wordcloud_data <- data %>%
+  unnest_tokens(word, review_text) %>%
+  count(word, sort = TRUE)
+
+wordcloud(words = wordcloud_data$word,
+          freq = wordcloud_data$n,
+          max.words = 100,
+          colors = brewer.pal(8, "Dark2"))
+```
+
+## Interactive Visualizations
+
+```{r interactive-viz}
+# Create an interactive scatter plot
+plot_ly(data = data,
+        x = ~rating,
+        y = ~sentiment_score,
+        type = "scatter",
+        mode = "markers",
+        marker = list(size = 10, opacity = 0.5),
+        text = ~paste("Review:", review_text)) %>%
+  layout(title = "Rating vs Sentiment Score",
+         xaxis = list(title = "Rating"),
+         yaxis = list(title = "Sentiment Score"))
+```
+
+## Key Findings
+
+1. **Sentiment Distribution**: The analysis reveals the overall distribution of positive, negative, and neutral sentiments in the reviews.
+
+2. **Common Themes**: Through word cloud analysis, we can identify the most frequently mentioned terms in customer reviews.
+
+3. **Rating-Sentiment Correlation**: The interactive visualization shows the relationship between numerical ratings and sentiment scores.
+
+## How to Use This Project
+
+1. Clone the repository
+2. Install required R packages
+3. Run the analysis script
+4. Explore the visualizations and insights
+
+## Technical Details
+
+The project uses the following R packages:
+- ggplot2 for static visualizations
+- plotly for interactive plots
+- wordcloud for text analysis
+- dplyr and tidyr for data manipulation
+
+## Future Improvements
+
+- Add more advanced NLP techniques
+- Implement real-time sentiment analysis
+- Create a web interface for interactive analysis
+- Add support for multiple languages
+
+---
+
+*This showcase page is automatically deployed using GitHub Actions whenever changes are pushed to the main branch.* 
