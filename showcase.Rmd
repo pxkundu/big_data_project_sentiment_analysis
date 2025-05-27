@@ -15,6 +15,9 @@ library(dplyr)
 library(tidyr)
 library(wordcloud)
 library(plotly)
+library(tidytext)
+library(textdata)
+library(RColorBrewer)
 ```
 
 # Project Overview
@@ -33,18 +36,37 @@ This project analyzes sentiment in e-commerce product reviews to understand cust
 ```{r load-data}
 # Load and prepare the data
 data <- read.csv("Dataset.csv")
+
+# Preprocess the CustomerReviewContent column
+reviews <- data %>%
+  select(CustomerReviewContent) %>%
+  filter(!is.na(CustomerReviewContent)) %>%
+  mutate(CustomerReviewContent = tolower(CustomerReviewContent)) %>%
+  mutate(CustomerReviewContent = gsub("[[:punct:]]", " ", CustomerReviewContent)) %>%
+  mutate(CustomerReviewContent = gsub("[[:digit:]]", " ", CustomerReviewContent))
+
+# Tokenize the text into individual words
+reviews_tokenized <- reviews %>%
+  unnest_tokens(word, CustomerReviewContent)
+
+# Use the Bing sentiment lexicon
+bing_sentiments <- get_sentiments("bing")
+
+# Join with the tokenized dataset to get sentiment scores
+sentiment_scores <- reviews_tokenized %>%
+  inner_join(bing_sentiments, by = "word") %>%
+  count(sentiment, sort = TRUE)
 ```
 
 ### Sentiment Distribution
 
 ```{r sentiment-distribution}
 # Create a sentiment distribution plot
-sentiment_plot <- ggplot(data, aes(x = sentiment)) +
-  geom_bar(fill = "steelblue") +
+sentiment_plot <- ggplot(sentiment_scores, aes(x = sentiment, y = n, fill = sentiment)) +
+  geom_bar(stat = "identity") +
+  labs(title = "Sentiment Distribution", x = "Sentiment", y = "Count") +
   theme_minimal() +
-  labs(title = "Distribution of Sentiment Scores",
-       x = "Sentiment",
-       y = "Count")
+  scale_fill_brewer(palette = "Set2")
 
 ggplotly(sentiment_plot)
 ```
@@ -53,9 +75,9 @@ ggplotly(sentiment_plot)
 
 ```{r wordcloud}
 # Generate word cloud from review text
-wordcloud_data <- data %>%
-  unnest_tokens(word, review_text) %>%
-  count(word, sort = TRUE)
+wordcloud_data <- reviews_tokenized %>%
+  count(word, sort = TRUE) %>%
+  anti_join(stop_words)
 
 wordcloud(words = wordcloud_data$word,
           freq = wordcloud_data$n,
@@ -66,26 +88,31 @@ wordcloud(words = wordcloud_data$word,
 ## Interactive Visualizations
 
 ```{r interactive-viz}
-# Create an interactive scatter plot
-plot_ly(data = data,
-        x = ~rating,
-        y = ~sentiment_score,
-        type = "scatter",
-        mode = "markers",
-        marker = list(size = 10, opacity = 0.5),
-        text = ~paste("Review:", review_text)) %>%
-  layout(title = "Rating vs Sentiment Score",
-         xaxis = list(title = "Rating"),
-         yaxis = list(title = "Sentiment Score"))
+# Calculate sentiment score for each review
+review_sentiments <- reviews_tokenized %>%
+  inner_join(bing_sentiments, by = "word") %>%
+  group_by(CustomerReviewContent) %>%
+  summarise(sentiment_score = sum(ifelse(sentiment == "positive", 1, -1))) %>%
+  arrange(desc(sentiment_score))
+
+# Create an interactive histogram of sentiment scores
+plot_ly(data = review_sentiments,
+        x = ~sentiment_score,
+        type = "histogram",
+        marker = list(color = "steelblue"),
+        opacity = 0.7) %>%
+  layout(title = "Distribution of Sentiment Scores",
+         xaxis = list(title = "Sentiment Score"),
+         yaxis = list(title = "Frequency"))
 ```
 
 ## Key Findings
 
-1. **Sentiment Distribution**: The analysis reveals the overall distribution of positive, negative, and neutral sentiments in the reviews.
+1. **Sentiment Distribution**: The analysis reveals the overall distribution of positive and negative sentiments in the reviews using the Bing sentiment lexicon.
 
-2. **Common Themes**: Through word cloud analysis, we can identify the most frequently mentioned terms in customer reviews.
+2. **Common Themes**: Through word cloud analysis, we can identify the most frequently mentioned terms in customer reviews, excluding common stop words.
 
-3. **Rating-Sentiment Correlation**: The interactive visualization shows the relationship between numerical ratings and sentiment scores.
+3. **Sentiment Score Distribution**: The interactive visualization shows the distribution of sentiment scores across all reviews, helping identify the overall sentiment trend.
 
 ## How to Use This Project
 
@@ -100,6 +127,7 @@ The project uses the following R packages:
 - ggplot2 for static visualizations
 - plotly for interactive plots
 - wordcloud for text analysis
+- tidytext for text processing and sentiment analysis
 - dplyr and tidyr for data manipulation
 
 ## Future Improvements
@@ -108,6 +136,7 @@ The project uses the following R packages:
 - Implement real-time sentiment analysis
 - Create a web interface for interactive analysis
 - Add support for multiple languages
+- Incorporate topic modeling for better theme identification
 
 ---
 
